@@ -8,18 +8,19 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * Created by mserrate on 14/12/15.
+ * Created by mserrate on 26/12/15.
  */
-public class Context {
-    private static final Logger LOG = LoggerFactory.getLogger(Context.class);
+public abstract class BaseTopology {
+    private static final Logger LOG = LoggerFactory.getLogger(BaseTopology.class);
 
-    Properties properties;
+    protected Properties topologyConfig;
 
-    Context(String configFileLocation) throws Exception {
-        properties = new Properties();
+    public BaseTopology(String configFileLocation) throws Exception {
+
+        topologyConfig = new Properties();
         try {
             InputStream is = new FileInputStream(configFileLocation);
-            properties.load(is);
+            topologyConfig.load(is);
         } catch (FileNotFoundException e) {
             LOG.error("Encountered error while reading configuration properties: "
                     + e.getMessage());
@@ -29,9 +30,5 @@ public class Context {
                     + e.getMessage());
             throw e;
         }
-    }
-
-    public String getString(String key) {
-        return properties.getProperty(key);
     }
 }

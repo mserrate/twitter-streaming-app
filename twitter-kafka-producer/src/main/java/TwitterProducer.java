@@ -1,7 +1,6 @@
-import com.google.common.collect.Lists;
 import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Constants;
-import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
+import com.twitter.hbc.core.endpoint.StatusesSampleEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.BasicClient;
 import com.twitter.hbc.httpclient.auth.Authentication;
@@ -9,7 +8,6 @@ import com.twitter.hbc.httpclient.auth.OAuth1;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
-import scala.util.parsing.combinator.testing.Str;
 
 import java.util.Properties;
 import java.util.concurrent.BlockingQueue;
@@ -25,7 +23,6 @@ public class TwitterProducer {
     private static final String TOKEN = "accessToken";
     private static final String SECRET = "accessTokenSecret";
     private static final String KAFKA_TOPIC = "kafka.twitter.raw.topic";
-    private static final String TRACK_TERMS = "#starwars";
 
     public static void run(Context context) throws InterruptedException {
         // Producer properties
@@ -41,9 +38,10 @@ public class TwitterProducer {
         // Create an appropriately sized blocking queue
         BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
 
-        StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint();
-        // add track term
-        endpoint.trackTerms(Lists.newArrayList(TRACK_TERMS));
+        // Define our endpoint: By default, delimited=length is set (we need this for our processor)
+        // and stall warnings are on.
+        StatusesSampleEndpoint endpoint = new StatusesSampleEndpoint();
+        endpoint.stallWarnings(false);
 
         Authentication auth = new OAuth1(context.getString(CONSUMER_KEY), context.getString(CONSUMER_SECRET), context.getString(TOKEN), context.getString(SECRET));
         //Authentication auth = new com.twitter.hbc.httpclient.auth.BasicAuth(username, password);

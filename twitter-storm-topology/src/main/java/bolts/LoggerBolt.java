@@ -10,8 +10,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by mserrate on 14/12/15.
  */
-public class PrinterBolt extends BaseBasicBolt {
-    public static final Logger LOG = LoggerFactory.getLogger(PrinterBolt.class);
+public class LoggerBolt extends BaseBasicBolt {
+    public static final Logger LOG = LoggerFactory.getLogger(LoggerBolt.class);
     @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
         LOG.info(tuple.toString());

@@ -12,40 +12,29 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Created by mserrate on 26/12/15.
  */
-public class SentimentAnalysisToCassandraBolt extends BaseBasicBolt {
+public class SentimentAnalysisToCassandraBolt extends CassandraBaseBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SentimentAnalysisToCassandraBolt.class);
 
-    private Cluster cluster;
-    private Session session;
-    private Properties properties;
-
-    @Override
-    public void prepare(Map stormConf, TopologyContext context) {
-        cluster = Cluster.builder().addContactPoint(properties.getProperty("cassandra.host")).build();
-        session = cluster.connect(properties.getProperty("cassandra.keyspace"));
-    }
-
-    @Override
-    public void cleanup() {
-        session.close();
-        cluster.close();
+    public SentimentAnalysisToCassandraBolt(Properties properties) {
+        super(properties);
     }
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
 
-        Statement statement = QueryBuilder.update("tweetSentimentAnalysis")
-                .with(QueryBuilder.set("tweetText", tuple.getStringByField("tweet_text")))
+        ArrayList<String> hashtags = (ArrayList<String>)tuple.getValueByField("tweet_hashtags");
+
+        Statement statement = QueryBuilder.update("tweet_sentiment_analysis")
+                .with(QueryBuilder.set("tweet", tuple.getStringByField("tweet_text")))
                 .and(QueryBuilder.set("sentiment", tuple.getDoubleByField("tweet_sentiment")))
-                .and(QueryBuilder.set("country", tuple.getStringByField("tweet_country")))
-                .where(QueryBuilder.eq("id", tuple.getLongByField("tweet_id")))
-                .and(QueryBuilder.eq("createdAt", tuple.getDoubleByField("tweet_created_at")));
+                .and(QueryBuilder.addAll("hashtags", new HashSet<String>(hashtags)))
+                .and(QueryBuilder.set("created_at", tuple.getStringByField("tweet_created_at")))
+                .where(QueryBuilder.eq("tweet_id", tuple.getLongByField("tweet_id")));
 
         LOG.debug(statement.toString());
 

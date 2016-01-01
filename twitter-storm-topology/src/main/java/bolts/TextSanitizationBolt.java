@@ -30,22 +30,16 @@ public class TextSanitizationBolt extends BaseBasicBolt {
         text = normalizedText.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
         text = text.replaceAll("[^\\p{L}\\p{Nd}]+", " ").toLowerCase();
 
-        ArrayList<Double> coordinates = (ArrayList<Double>)tuple.getValue(2);
-
-        String country = "Unknown";
-        try {
-            GeoName geoName = ReverseGeoCode.getInstance().nearestPlace(coordinates.get(0), coordinates.get(1));
-            country = geoName.country;
-        } catch (IOException e) {
-            LOG.error("Error loading city file: " + e.getMessage());
+        ArrayList<String> hashtags = (ArrayList<String>)tuple.getValueByField("tweet_hashtags");
+        for (int i = 0; i < hashtags.size(); i++) {
+            hashtags.set(i, hashtags.get(i).toLowerCase());
         }
 
-
-        collector.emit(new Values(tuple.getLongByField("tweet_id"), text, country, tuple.getStringByField("tweet_created_at")));
+        collector.emit(new Values(tuple.getLongByField("tweet_id"), text, hashtags, tuple.getStringByField("tweet_created_at")));
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("tweet_id", "tweet_text", "tweet_country", "tweet_created_at"));
+        declarer.declare(new Fields("tweet_id", "tweet_text", "tweet_hashtags", "tweet_created_at"));
     }
 }

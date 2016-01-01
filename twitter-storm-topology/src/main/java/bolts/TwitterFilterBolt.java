@@ -12,7 +12,6 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.util.parsing.combinator.testing.Str;
 
 import java.util.ArrayList;
 
@@ -30,17 +29,16 @@ public class TwitterFilterBolt extends BaseBasicBolt {
             if (object.containsKey("lang") && "en".equals(object.get("lang"))) {
                 long id = (long)object.get("id");
                 String text = (String)object.get("text");
-                String created_at = (String)object.get("created_at");
-
-                ArrayList<Double> coordinates = new ArrayList<>();
-                if (object.containsKey("coordinates")) {
-                    JSONObject coordinatesObject = (JSONObject)object.get("coordinates");
-                    JSONArray coordinatesArray = (JSONArray)coordinatesObject.get("coordinates");
-                    coordinates.add((Double)coordinatesArray.get(0));
-                    coordinates.add((Double)coordinatesArray.get(1));
+                String createdAt = (String)object.get("created_at");
+                JSONObject entities= (JSONObject)object.get("entities");
+                JSONArray hashtags =(JSONArray)entities.get("hashtags");
+                ArrayList<String> hashtagList = new ArrayList<String>();
+                for(Object hashtag : hashtags)
+                {
+                    hashtagList.add((String)((JSONObject)hashtag).get("text"));
                 }
 
-                collector.emit(new Values(id, text, coordinates, created_at));
+                collector.emit(new Values(id, text, hashtagList, createdAt));
             }
             else {
                 LOG.debug("Ignoring non-english tweets");
@@ -54,6 +52,6 @@ public class TwitterFilterBolt extends BaseBasicBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("tweet_id", "tweet_text", "tweet_coordinates", "tweet_created_at"));
+        declarer.declare(new Fields("tweet_id", "tweet_text", "tweet_hashtags", "tweet_created_at"));
     }
 }

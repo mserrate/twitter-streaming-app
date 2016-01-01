@@ -141,7 +141,11 @@ public class SentiWordNet {
     }
 
     public double extract(String word, String pos) {
-        return dictionary.get(word + "#" + pos);
+        String key = word + "#" + pos;
+        if (dictionary.containsKey(key))
+            return dictionary.get(word + "#" + pos);
+        else
+            return 0;
     }
 
     public static void main(String [] args) throws IOException {

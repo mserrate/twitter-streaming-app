@@ -12,21 +12,20 @@ import java.util.Properties;
 /**
  * Created by mserrate on 14/12/15.
  */
-public class TwitterProcessorTopology {
-    private Context context;
+public class TwitterProcessorTopology extends BaseTopology {
 
-    public TwitterProcessorTopology(Context context) {
-        this.context = context;
+    public TwitterProcessorTopology(String configFileLocation) throws Exception {
+        super(configFileLocation);
     }
 
     private void configureKafkaSpout(TopologyBuilder topology) {
-        BrokerHosts hosts = new ZkHosts(context.getString("zookeeper.host"));
+        BrokerHosts hosts = new ZkHosts(topologyConfig.getProperty("zookeeper.host"));
 
         SpoutConfig spoutConfig = new SpoutConfig(
                 hosts,
-                context.getString("kafka.twitter.raw.topic"),
-                context.getString("kafka.zkRoot"),
-                context.getString("kafka.consumer.group"));
+                topologyConfig.getProperty("kafka.twitter.raw.topic"),
+                topologyConfig.getProperty("kafka.zkRoot"),
+                topologyConfig.getProperty("kafka.consumer.group"));
         spoutConfig.scheme= new SchemeAsMultiScheme(new StringScheme());
 
         KafkaSpout kafkaSpout= new KafkaSpout(spoutConfig);
@@ -34,7 +33,7 @@ public class TwitterProcessorTopology {
     }
 
     private void configureBolts(TopologyBuilder topology) {
-        //topology.setBolt("logBolt", new PrinterBolt()).shuffleGrouping("twitterSpout");
+        // filtering
         topology.setBolt("twitterFilter", new TwitterFilterBolt(), 4)
                 .shuffleGrouping("twitterSpout");
 
@@ -47,16 +46,24 @@ public class TwitterProcessorTopology {
                 .shuffleGrouping("textSanitization");
 
         // persist tweets with analysis to Cassandra
-        topology.setBolt("sentimentAnalysisToCassandra", new SentimentAnalysisToCassandraBolt(), 4)
+        topology.setBolt("sentimentAnalysisToCassandra", new SentimentAnalysisToCassandraBolt(topologyConfig), 4)
                 .shuffleGrouping("sentimentAnalysis");
 
-        // aggregate sentiments per country
-        topology.setBolt("countryAggregator", new CountrySentimentAggregatorBolt(), 4)
-                .fieldsGrouping("sentimentAnalysis", new Fields("tweet_country"));
+        // divide sentiment by hashtag
+        topology.setBolt("hashtagSplitter", new HashtagSplitterBolt(), 4)
+                .shuffleGrouping("sentimentAnalysis");
 
-        // persist totals to Cassandra
-        topology.setBolt("countryAggregateToCassandra", new CountrySentimentAggregatorToCassandraBolt(), 4)
-                .shuffleGrouping("countryAggregator");
+        // persist hashtags to Cassandra
+        topology.setBolt("hashtagSentimentAggregator", new HashtagSentimentCounterBolt(), 4)
+                .fieldsGrouping("hashtagSplitter", new Fields("tweet_hashtag"));
+
+        topology.setBolt("topHashtag", new TopHashtagBolt())
+                .globalGrouping("hashtagSentimentAggregator");
+
+        topology.setBolt("topHashtagToCassandra", new TopHashtagToCassandraBolt(topologyConfig), 4)
+                .shuffleGrouping("topHashtag");
+
+        //topology.setBolt("logBolt", new LoggerBolt()).shuffleGrouping("hashtagSplitter");
     }
 
     private void buildAndSubmit() throws Exception {
@@ -68,7 +75,7 @@ public class TwitterProcessorTopology {
 
         //set producer properties
         Properties props = new Properties();
-        props.put("metadata.broker.list", context.getString("kafka.broker.list"));
+        props.put("metadata.broker.list", topologyConfig.getProperty("kafka.broker.list"));
         props.put("request.required.acks", "1");
         props.put("serializer.class", "kafka.serializer.StringEncoder");
         config.put(KafkaBolt.KAFKA_BROKER_PROPERTIES, props);
@@ -79,7 +86,7 @@ public class TwitterProcessorTopology {
     public static void main(String[] args) throws Exception {
         String configFileLocation = args[0];
 
-        TwitterProcessorTopology topology = new TwitterProcessorTopology(new Context(configFileLocation));
+        TwitterProcessorTopology topology = new TwitterProcessorTopology(configFileLocation);
         topology.buildAndSubmit();
     }
 }
