@@ -27,12 +27,12 @@ public class SentimentAnalysisToCassandraBolt extends CassandraBaseBolt {
     @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
 
-        ArrayList<String> hashtags = (ArrayList<String>)tuple.getValueByField("tweet_hashtags");
+        HashSet<String> hashtags = (HashSet<String>)tuple.getValueByField("tweet_hashtags");
 
         Statement statement = QueryBuilder.update("tweet_sentiment_analysis")
                 .with(QueryBuilder.set("tweet", tuple.getStringByField("tweet_text")))
                 .and(QueryBuilder.set("sentiment", tuple.getDoubleByField("tweet_sentiment")))
-                .and(QueryBuilder.addAll("hashtags", new HashSet<String>(hashtags)))
+                .and(QueryBuilder.addAll("hashtags", hashtags))
                 .and(QueryBuilder.set("created_at", tuple.getStringByField("tweet_created_at")))
                 .where(QueryBuilder.eq("tweet_id", tuple.getLongByField("tweet_id")));
 

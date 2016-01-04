@@ -25,7 +25,7 @@ public class TopHashtagBolt extends BaseBasicBolt {
     @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
         if (isTickTuple(tuple)) {
-            LOG.info("Tick: " + rankings);
+            LOG.debug("Tick: " + rankings);
             collector.emit(new Values(new ArrayList(rankings)));
         } else {
             rankHashtag(tuple);

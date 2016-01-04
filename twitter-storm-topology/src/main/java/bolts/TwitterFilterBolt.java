@@ -13,7 +13,7 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * Created by mserrate on 25/12/15.
@@ -32,10 +32,10 @@ public class TwitterFilterBolt extends BaseBasicBolt {
                 String createdAt = (String)object.get("created_at");
                 JSONObject entities= (JSONObject)object.get("entities");
                 JSONArray hashtags =(JSONArray)entities.get("hashtags");
-                ArrayList<String> hashtagList = new ArrayList<String>();
+                HashSet<String> hashtagList = new HashSet<String>();
                 for(Object hashtag : hashtags)
                 {
-                    hashtagList.add((String)((JSONObject)hashtag).get("text"));
+                    hashtagList.add(((String)((JSONObject)hashtag).get("text")).toLowerCase());
                 }
 
                 collector.emit(new Values(id, text, hashtagList, createdAt));

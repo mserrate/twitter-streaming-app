@@ -12,6 +12,7 @@ import backtype.storm.tuple.Values;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 /**
@@ -28,10 +29,10 @@ public class HashtagSplitterBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        ArrayList<String> hashtags = (ArrayList<String>)tuple.getValueByField("tweet_hashtags");
+        HashSet<String> hashtags = (HashSet<String>)tuple.getValueByField("tweet_hashtags");
 
         for (String hashtag : hashtags) {
-            collector.emit(new Values(tuple.getDoubleByField("tweet_sentiment"), hashtag));
+            collector.emit(new Values(hashtag));
         }
 
         collector.ack(tuple);
@@ -39,6 +40,6 @@ public class HashtagSplitterBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("tweet_sentiment", "tweet_hashtag"));
+        declarer.declare(new Fields("tweet_hashtag"));
     }
 }

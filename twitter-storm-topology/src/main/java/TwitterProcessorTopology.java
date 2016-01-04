@@ -51,14 +51,14 @@ public class TwitterProcessorTopology extends BaseTopology {
 
         // divide sentiment by hashtag
         topology.setBolt("hashtagSplitter", new HashtagSplitterBolt(), 4)
-                .shuffleGrouping("sentimentAnalysis");
+                .shuffleGrouping("textSanitization");
 
         // persist hashtags to Cassandra
-        topology.setBolt("hashtagSentimentAggregator", new HashtagSentimentCounterBolt(), 4)
+        topology.setBolt("hashtagCounter", new HashtagCounterBolt(), 4)
                 .fieldsGrouping("hashtagSplitter", new Fields("tweet_hashtag"));
 
         topology.setBolt("topHashtag", new TopHashtagBolt())
-                .globalGrouping("hashtagSentimentAggregator");
+                .globalGrouping("hashtagCounter");
 
         topology.setBolt("topHashtagToCassandra", new TopHashtagToCassandraBolt(topologyConfig), 4)
                 .shuffleGrouping("topHashtag");
