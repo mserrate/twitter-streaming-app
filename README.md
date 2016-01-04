@@ -2,9 +2,9 @@ twitter-streaming-app
 =====================
 
 ## Prerequisites
-    * [Apache Kafka](http://kafka.apache.org/) 0.8+
-    * [Apache Storm](http://storm.apache.org/) 0.10+
-    * [Apache Cassandra](http://cassandra.apache.org/) 2.2+
+* [Apache Kafka](http://kafka.apache.org/) 0.8+
+* [Apache Storm](http://storm.apache.org/) 0.10+
+* [Apache Cassandra](http://cassandra.apache.org/) 2.2+
 You can use the following repository to get the above infrastructure on docker containers: https://github.com/mserrate/CoreOS-BigData
 
 ### Create Kafka topic
